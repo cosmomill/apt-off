@@ -50,11 +50,11 @@ if [[ $1 == -h || $1 == --help ]]; then
 	echo -e "\tsimulate these operations with apt-get before to use apt-off."
 	echo -e "\tThe author cannot be considered as responseable for any problem.\n"
 fi
-	
 
-##########################
+
+######################
 ## Display options	##
-##########################
+######################
 if [[ $1 == -h || $1 == --help || $1 == -o || $1 == --options ]]; then
 	echo -e $BOLD$BLUE"OPTIONS"$NORMAL
 	echo -e $GREEN"\t-c$NORMAL ou$GREEN --configure$NORMAL"
@@ -71,7 +71,7 @@ if [[ $1 == -h || $1 == --help || $1 == -o || $1 == --options ]]; then
 	echo -e "\tDisplay options.\n"
 	echo -e $GREEN"\t-x$NORMAL or$GREEN --extract$BLUE [package1 package2 ...]$NORMAL or$BLUE [dist-upgrade]$NORMAL"
 	echo -e "\tExtract and install packages.\n"
-	
+
 	if [[ $1 == -h || $1 == --help ]]; then	
 		echo -e $BOLD$BLUE"COPYRIGHT"$NORMAL
 		echo -e "\tCopyright 2006, Goulven Guillard."
@@ -79,7 +79,7 @@ if [[ $1 == -h || $1 == --help || $1 == -o || $1 == --options ]]; then
 		echo -e "\tauthorized and encouraged if they are free."
 		echo -e "\tPlease report bugs at$BLUE lecotegougdelaforce [at] free.fr$NORMAL.\n"
 	fi
-	
+
 
 ##########################################
 ## Download of apt configuration files	##
@@ -90,12 +90,12 @@ elif [[ $1 == -c || $1 == --configure ]]; then
 		sh -x ./config_apt
 		cd ..
 	else
-		echo -e "You didn't execute$GREEN apt-off -p$NORMAL yet, or you have deleted the$VERT config_files$NORMAL directory and the$VERT config_apt$NORMAL file there was in it... Please restart all the procedure."
+		echo -e "You didn't execute$GREEN apt-off -g$NORMAL yet, or you have deleted the$VERT config_files$NORMAL directory and the$VERT config_apt$NORMAL file there was in it... Please restart all the procedure."
 	fi
 
 
 ##########################
-## Packages selection	##	
+## Packages selection	##
 ##########################
 elif [[ $1 == -g || $1 == --generate ]]; then
 	if [[ `ls /var/lib/apt/lists/ | grep binary-i386_Packages | wc -l` == 0 ]]; then
@@ -104,14 +104,14 @@ elif [[ $1 == -g || $1 == --generate ]]; then
 			awk '($1=="deb"||$1=="deb-src")&&!match($2,"cdrom"){split($2,A,"/");for(i=4;i<=NF;++i) print "wget -O "A[3]"_"A[4]"_dists_"$3"_"$i"_binary-i386_Packages.gz "$2"dists/"$3"/"$i"/binary-i386/Packages.gz"}' < /etc/apt/sources.list > config_files/config_apt
 			echo -e "WARNING : Your computer isn't correctly configured in order to use the apt tool."
 			echo -e "This program will configure it for you. You now have to execute the$VERT apt-off -c$NORMAL"
-			echo -e "command on a computer with an internet connexion. The configuration will end"
+			echo -e "command on a computer with an internet connection. The configuration will end"
 			echo -e "automatically next time you will use apt-off."
 			exit
 		elif [[ `ls config_files | grep gz | wc -l` > 0 ]]; then
 			sudo cp config_files/*.gz /var/lib/apt/lists/
 			sudo gunzip /var/lib/apt/lists/*.gz
 		else
-			echo -e "Vous devez d'abord exécuter$VERT apt-off -c$NORMAL sur un ordinateur avec internet !"
+			echo -e "You must first run$VERT apt-off -c$NORMAL on a computer with an internet connection!"
 			exit
 		fi
 	fi
@@ -138,14 +138,14 @@ elif [[ $1 == -g || $1 == --generate ]]; then
 			sudo apt-get -qq --print-uris install ${!i} >> .offline_tmp
 		done
 	fi
-       	awk '{print "wget -O " $2 " " $1}' < .offline_tmp >> offline.packages
+		awk '{print "wget -O " $2 " " $1}' < .offline_tmp >> offline.packages
 	echo "cd .." >> offline.packages
 
 #### Lines to uncomment for Windows :
 #	awk '{print $1}' < .offline_tmp >> offline.packages_url
 #	awk '{print $2}' < .offline_tmp >> offline.packages_list
 
-        rm -f .offline_tmp	
+	rm -f .offline_tmp
 
 
 ##########################
