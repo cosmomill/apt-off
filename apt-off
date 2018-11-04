@@ -28,7 +28,7 @@ SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
 
 
 ##################
-## Display help	##
+## Display help ##
 ##################
 if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	echo -e "\\033[2J\\033[0;0f$BOLD$BLUE""NAME"$NORMAL
@@ -50,7 +50,7 @@ fi;
 
 
 ######################
-## Display options	##
+## Display options  ##
 ######################
 if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "-o" || "$1" == "--options" ]]; then
 	echo -e $BOLD$BLUE"OPTIONS"$NORMAL
@@ -79,7 +79,7 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "-o" || "$1" == "--options" ]]
 
 
 ##########################################
-## Download of apt configuration files	##
+## Download of apt configuration files  ##
 ##########################################
 elif [[ "$1" == "-c" || "$1" == "--configure" ]]; then
 	if [[ -e /var/lib/apt/config_files/config_apt ]]; then
@@ -91,7 +91,7 @@ elif [[ "$1" == "-c" || "$1" == "--configure" ]]; then
 
 
 ##########################
-## Packages selection	##
+## Packages selection   ##
 ##########################
 elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
 	if [[ `ls /var/lib/apt/lists/ | grep binary-amd64_Packages | wc -l` -eq 0 ]]; then
@@ -141,7 +141,7 @@ elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
 
 
 ##########################
-## Packages download	##
+## Packages download    ##
 ##########################
 elif [[ "$1" == "-d" || "$1" == "--download" ]]; then
 	if [[ ! -e /var/lib/apt/deb ]]; then
@@ -157,7 +157,7 @@ elif [[ "$1" == "-d" || "$1" == "--download" ]]; then
 
 
 ##########################
-## Packages extraction	##
+## Packages extraction  ##
 ##########################
 elif [[ "$1" == "-x" || "$1" == "--extract" ]]; then
 	if [[ -e /var/lib/apt/install.packages ]]; then
@@ -168,18 +168,18 @@ elif [[ "$1" == "-x" || "$1" == "--extract" ]]; then
 	fi;
 
 ##############################
-## Packages installation	##
+## Packages installation    ##
 ##############################
 elif [[ "$1" == "-i" || "$1" == "--install" ]]; then
 	if [[ "$#" -lt 2 ]]; then
 		echo "WARNING : You have to indicate which packages you want to install!"
 		exit
 	else
-		$SCRIPT_DIR/apt-off -g && $SCRIPT_DIR/apt-off -c && $SCRIPT_DIR/apt-off -g ${@:2} && $SCRIPT_DIR/apt-off -d && $SCRIPT_DIR/apt-off -x
+		$SCRIPT_DIR/apt-off -g && $SCRIPT_DIR/apt-off -c && $SCRIPT_DIR/apt-off -g "${@:2}" && $SCRIPT_DIR/apt-off -d && $SCRIPT_DIR/apt-off -x
 	fi;
 
 ##########################
-## Display usage rules	##
+## Display usage rules  ##
 ##########################
 else
 	$SCRIPT_DIR/apt-off -o

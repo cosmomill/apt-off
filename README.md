@@ -1,4 +1,4 @@
-apt--off
+apt-off
 ========
 
 apt-off is a script designed to download and install debian binary packages without the apt tool. It proceeds in three steps:
