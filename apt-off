@@ -1,6 +1,7 @@
-#!/bin/bash
+#!/bin/sh
 #
-# Copyright 2006, Goulven Guillard.
+# Copyright 2006-2018, Goulven Guillard.
+# Copyright 2018, Rene Kanzler.
 #
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -23,173 +24,166 @@ RED="\\033[31m"
 PINK="\\033[35m"
 BLUE="\\033[34m"
 
+SCRIPT_DIR="$( cd "$( dirname "$0" )" && pwd )"
+
 
 ##################
 ## Display help	##
 ##################
-if [[ $1 == -h || $1 == --help ]]; then
+if [[ "$1" == "-h" || "$1" == "--help" ]]; then
 	echo -e "\\033[2J\\033[0;0f$BOLD$BLUE""NAME"$NORMAL
 	echo -e "\tapt-off\n"
 	echo -e $BOLD$BLUE"SYNOPSIS"$NORMAL
-	echo -e $GREEN"\tapt-off [option] [packages/dist-upgrade]\n"$NORMAL
+	echo -e $GREEN"\tapt-off [option] [packages]\n"$NORMAL
 	echo -e $BOLD$BLUE"DESCRIPTION"$NORMAL
-	echo -e "\t$GREEN""apt-off$NORMAL is a script designed to allow the use of the apt tool on a"
-	echo -e "\tcomputer without any network connection. It proceeds in three steps,"
-	echo -e "\twhich must be done in the directory containing the apt-off file :"
+	echo -e "\t$GREEN""apt-off$NORMAL is a script designed to download and install packages"
+	echo -e "\twithout the apt tool. It proceeds in three steps:"
 	echo -e "\t1- packages selection (option -g)"
-	echo -e "\t2- packages download (option -d); this step has to be done on a Linux"
-	echo -e "\tsystem computer (it$BOLD does not need$NORMAL apt, but uses$GREEN wget$NORMAL ; if you only"
-	echo -e "\thave access to a Windows system, you should uncomment one of the two"
-	echo -e "\tdedicated lines at the end of the apt-off file and download all the"
-	echo -e "\tpackages listed in the $GREEN""offline.packages_url$NORMAL or in the"
-	echo -e "\t$GREEN""offline.packages_list$NORMAL files by hand...) with an internet connection"
+	echo -e "\t2- packages download (option -d)"
 	echo -e "\t3- packages installation (option -x)\n"
 	echo -e $BOLD$BLUE"WARNING"$NORMAL
-	echo -e $BOLD$RED"\tCAUTION :$NORMAL the installation of packages and the use of the dist-upgrade"
+	echo -e $BOLD$RED"\tCAUTION :$NORMAL the installation of packages"
 	echo -e "\toption can pose some risks. You are strongly encouraged to"
 	echo -e "\tsimulate these operations with apt-get before to use apt-off."
 	echo -e "\tThe author cannot be considered as responseable for any problem.\n"
-fi
+fi;
 
 
 ######################
 ## Display options	##
 ######################
-if [[ $1 == -h || $1 == --help || $1 == -o || $1 == --options ]]; then
+if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "-o" || "$1" == "--options" ]]; then
 	echo -e $BOLD$BLUE"OPTIONS"$NORMAL
 	echo -e $GREEN"\t-c$NORMAL ou$GREEN --configure$NORMAL"
 	echo -e "\tDownload apt configuration files.\n"
 	echo -e $GREEN"\t-d$NORMAL ou$GREEN --download$NORMAL"
-	echo -e "\tDownload packages. This option has to be used on a Linux system"
-	echo -e "\twith an internet connection.$BOLD$RED Don't forget the offline.packages"
-	echo -e "\tfile !!!$NORMAL\n"
-	echo -e $GREEN"\t-g$NORMAL or$GREEN --generate$BLUE [package1 package2 ...]$NORMAL or$BLUE [dist-upgrade]$NORMAL"
+	echo -e "\tDownload packages\n"
+	echo -e $GREEN"\t-g$NORMAL or$GREEN --generate$BLUE [package1 package2 ...]$NORMAL"
 	echo -e "\tGenerate packages list, stored in the $BLUE offline.packages$NORMAL file.\n"
 	echo -e $GREEN"\t-h$NORMAL or$GREEN --help"$NORMAL
 	echo -e "\tPrint this help.\n"
 	echo -e $GREEN"\t-o$NORMAL or$GREEN --options$NORMAL"
 	echo -e "\tDisplay options.\n"
-	echo -e $GREEN"\t-x$NORMAL or$GREEN --extract$BLUE [package1 package2 ...]$NORMAL or$BLUE [dist-upgrade]$NORMAL"
+	echo -e $GREEN"\t-x$NORMAL or$GREEN --extract$BLUE [package1 package2 ...]$NORMAL"
 	echo -e "\tExtract and install packages.\n"
+	echo -e $GREEN"\t-i$NORMAL or$GREEN --install$BLUE [package1 package2 ...]$NORMAL"
+	echo -e "\tConfigure apt-off, download and install packages.\n"
 
-	if [[ $1 == -h || $1 == --help ]]; then	
+	if [[ "$1" == "-h" || "$1" == "--help" ]]; then	
 		echo -e $BOLD$BLUE"COPYRIGHT"$NORMAL
-		echo -e "\tCopyright 2006, Goulven Guillard."
+		echo -e "\tCopyright 2006-2018, Goulven Guillard."
+		echo -e "\tCopyright 2018, Rene Kanzler."
 		echo -e "\tThis program is copyleft : copy, modification and diffusion are"
-		echo -e "\tauthorized and encouraged if they are free."
-		echo -e "\tPlease report bugs at$BLUE lecotegougdelaforce [at] free.fr$NORMAL.\n"
-	fi
+		echo -e "\tauthorized and encouraged if they are free.\n"
+	fi;
 
 
 ##########################################
 ## Download of apt configuration files	##
 ##########################################
-elif [[ $1 == -c || $1 == --configure ]]; then
-	if [[ -e config_files/config_apt ]]; then
-		cd config_files
+elif [[ "$1" == "-c" || "$1" == "--configure" ]]; then
+	if [[ -e /var/lib/apt/config_files/config_apt ]]; then
+		cd /var/lib/apt/config_files
 		sh -x ./config_apt
-		cd ..
 	else
 		echo -e "You didn't execute$GREEN apt-off -g$NORMAL yet, or you have deleted the$VERT config_files$NORMAL directory and the$VERT config_apt$NORMAL file there was in it... Please restart all the procedure."
-	fi
+	fi;
 
 
 ##########################
 ## Packages selection	##
 ##########################
-elif [[ $1 == -g || $1 == --generate ]]; then
-	if [[ `ls /var/lib/apt/lists/ | grep binary-i386_Packages | wc -l` == 0 ]]; then
-		if [[ ! -e config_files ]]; then
-			mkdir config_files
-			awk '($1=="deb"||$1=="deb-src")&&!match($2,"cdrom"){split($2,A,"/");for(i=4;i<=NF;++i) print "wget -O "A[3]"_"A[4]"_dists_"$3"_"$i"_binary-i386_Packages.gz "$2"dists/"$3"/"$i"/binary-i386/Packages.gz"}' < /etc/apt/sources.list > config_files/config_apt
+elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
+	if [[ `ls /var/lib/apt/lists/ | grep binary-amd64_Packages | wc -l` -eq 0 ]]; then
+		if [[ ! -e /var/lib/apt/config_files ]]; then
+			mkdir -p /var/lib/apt/config_files
+			awk '($1=="deb"||$1=="deb-src")&&!match($2,"cdrom"){split($2,A,"/");for(i=4;i<=NF;++i) print "wget -O "A[3]"_"A[4]"_dists_"$3"_"$i"_binary-amd64_Packages.gz "$2"dists/"$3"/"$i"/binary-amd64/Packages.gz"}' < /etc/apt/sources.list > /var/lib/apt/config_files/config_apt
 			echo -e "WARNING : Your computer isn't correctly configured in order to use the apt tool."
 			echo -e "This program will configure it for you. You now have to execute the$VERT apt-off -c$NORMAL"
-			echo -e "command on a computer with an internet connection. The configuration will end"
-			echo -e "automatically next time you will use apt-off."
+			echo -e "command. The configuration will end automatically next time you will use apt-off."
 			exit
-		elif [[ `ls config_files | grep gz | wc -l` > 0 ]]; then
-			sudo cp config_files/*.gz /var/lib/apt/lists/
-			sudo gunzip /var/lib/apt/lists/*.gz
+		elif [[ `ls /var/lib/apt/config_files | grep gz | wc -l` -gt 0 ]]; then
+			cp /var/lib/apt/config_files/*.gz /var/lib/apt/lists/
+			gunzip /var/lib/apt/lists/*.gz
 		else
-			echo -e "You must first run$VERT apt-off -c$NORMAL on a computer with an internet connection!"
+			echo -e "You must first run$VERT apt-off -c$NORMAL!"
 			exit
-		fi
-	fi
+		fi;
+	fi;
 
-	if [[ -e offline.packages ]]; then
+	if [[ -e /var/lib/apt/offline.packages ]]; then
 		echo "WARNING : The offline.packages file already exists, do you want to overwrite it (if not, the packages will be added to the existing list) ? (y/n)"
 		read OVERWRITE
-	fi
+	fi;
 
-	if [[ $OVERWRITE == y ]]; then
-		echo "cd ./deb" > offline.packages
+	if [[ "$OVERWRITE" == "y" ]]; then
+		echo "cd /var/lib/apt/deb" > offline.packages
+		echo "cd /var/lib/apt/deb" > install.packages
 	else
-		echo "cd ./deb" >> offline.packages
-	fi
-	if [[ "$#" < 2 ]]; then
-		echo "WARNING : You have to indicate which packages you want to install,"
-		echo "or \"dist-upgrade\" !!!"
+		echo "cd /var/lib/apt/deb" >> offline.packages
+		echo "cd /var/lib/apt/deb" >> install.packages
+	fi;
+
+	if [[ "$#" -lt 2 ]]; then
+		echo "WARNING : You have to indicate which packages you want to install!"
 		exit
-	elif [[ $2 == dist-upgrade ]]; then
-		sudo apt-get -qq --print-uris dist-upgrade > .offline_tmp
 	else
-		for ((i=2; i<="$#"; i++ ))
-		do 
-			sudo apt-get -qq --print-uris install ${!i} >> .offline_tmp
-		done
-	fi
-		awk '{print "wget -O " $2 " " $1}' < .offline_tmp >> offline.packages
-	echo "cd .." >> offline.packages
+		for i in "${@:2}"; do
+			awk '($1 == "Package:" || $1 == "Filename:") { print $2 }' /var/lib/apt/lists/*_binary-amd64_Packages | sed 'N;s/\n/ /' | awk -v deb="${i}" '($1 == deb) {print $2}' >> /var/lib/apt/.offline_tmp
+		done;
 
-#### Lines to uncomment for Windows :
-#	awk '{print $1}' < .offline_tmp >> offline.packages_url
-#	awk '{print $2}' < .offline_tmp >> offline.packages_list
+		REPOSITORY=`awk '($1 == "deb") { print $2 }' /etc/apt/sources.list`
+		awk -v repo="${REPOSITORY}" '{print "wget -O " gensub( ".*/", "", $1 ) " "repo$1}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/offline.packages
+		awk '{print "dpkg -i -F depends " gensub( ".*/", "", $1 )}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/install.packages
 
-	rm -f .offline_tmp
+		rm -f /var/lib/apt/.offline_tmp
+	fi;
 
 
 ##########################
 ## Packages download	##
 ##########################
-elif [[ $1 == -d || $1 == --download ]]; then
-	if [[ ! -e deb ]]; then
-		mkdir deb
-	fi
-	sh -x ./offline.packages
+elif [[ "$1" == "-d" || "$1" == "--download" ]]; then
+	if [[ ! -e /var/lib/apt/deb ]]; then
+		mkdir -p /var/lib/apt/deb
+	fi;
+
+	if [[ -e /var/lib/apt/offline.packages ]]; then
+		sh -x /var/lib/apt/offline.packages
+	else
+		echo -e "You didn't execute$GREEN apt-off -g$NORMAL yet!"
+		exit
+	fi;
 
 
 ##########################
 ## Packages extraction	##
 ##########################
-elif [[ $1 == -x || $1 == --extract ]]; then
-	if [[ ! -e deb/partial ]]; then
-		PARTIAL_CREATED=true
-		mkdir deb/partial
+elif [[ "$1" == "-x" || "$1" == "--extract" ]]; then
+	if [[ -e /var/lib/apt/install.packages ]]; then
+		sh -x /var/lib/apt/install.packages
 	else
-		PARTIAL_CREATED=false
-	fi
-	if [[ "$#" < 2 ]]; then
-		echo "WARNING : You have to indicate which packages you want to install, or \"dist-upgrade\" !"
+		echo -e "You didn't execute$GREEN apt-off -g$NORMAL yet!"
 		exit
-	elif [[ $2 == dist-upgrade ]]; then
-		sudo apt-get -o dir::cache::archives=$PWD/deb/ dist-upgrade
-	else
-		for ((i=2; i<="$#"; i++ ))
-		do 
-			sudo apt-get -o dir::cache::archives=$PWD/deb/ install ${!i}
-		done
-	fi
-	if [[ PARTIAL_CREATED ]]; then
-		rm -rf deb/partial
-	fi
+	fi;
 
+##############################
+## Packages installation	##
+##############################
+elif [[ "$1" == "-i" || "$1" == "--install" ]]; then
+	if [[ "$#" -lt 2 ]]; then
+		echo "WARNING : You have to indicate which packages you want to install!"
+		exit
+	else
+		$SCRIPT_DIR/apt-off -g && $SCRIPT_DIR/apt-off -c && $SCRIPT_DIR/apt-off -g ${@:2} && $SCRIPT_DIR/apt-off -d && $SCRIPT_DIR/apt-off -x
+	fi;
 
 ##########################
 ## Display usage rules	##
 ##########################
 else
-	./apt-off -o
+	$SCRIPT_DIR/apt-off -o
 
 
-fi
+fi;
 ## End of apt-off.
