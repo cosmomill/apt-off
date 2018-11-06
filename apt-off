@@ -68,6 +68,8 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "-o" || "$1" == "--options" ]]
 	echo -e "\tExtract and install packages.\n"
 	echo -e $GREEN"\t-i$NORMAL or$GREEN --install$BLUE [package1 package2 ...]$NORMAL"
 	echo -e "\tConfigure apt-off, download and install packages.\n"
+	echo -e $GREEN"\t-p$NORMAL or$GREEN --purge$BLUE$NORMAL"
+	echo -e "\tDelete config files, packages list and downloaded packages.\n"
 
 	if [[ "$1" == "-h" || "$1" == "--help" ]]; then	
 		echo -e $BOLD$BLUE"COPYRIGHT"$NORMAL
@@ -83,8 +85,7 @@ if [[ "$1" == "-h" || "$1" == "--help" || "$1" == "-o" || "$1" == "--options" ]]
 ##########################################
 elif [[ "$1" == "-c" || "$1" == "--configure" ]]; then
 	if [[ -e /var/lib/apt/config_files/config_apt ]]; then
-		cd /var/lib/apt/config_files
-		sh -x ./config_apt
+		sh -x /var/lib/apt/config_files/config_apt
 	else
 		echo -e "You didn't execute$GREEN apt-off -g$NORMAL yet, or you have deleted the$VERT config_files$NORMAL directory and the$VERT config_apt$NORMAL file there was in it... Please restart all the procedure."
 	fi;
@@ -97,7 +98,7 @@ elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
 	if [[ `ls /var/lib/apt/lists/ | grep binary-amd64_Packages | wc -l` -eq 0 ]]; then
 		if [[ ! -e /var/lib/apt/config_files ]]; then
 			mkdir -p /var/lib/apt/config_files
-			awk '($1=="deb"||$1=="deb-src")&&!match($2,"cdrom"){split($2,A,"/");for(i=4;i<=NF;++i) print "wget -O "A[3]"_"A[4]"_dists_"$3"_"$i"_binary-amd64_Packages.gz "$2"dists/"$3"/"$i"/binary-amd64/Packages.gz"}' < /etc/apt/sources.list > /var/lib/apt/config_files/config_apt
+			awk '($1=="deb"||$1=="deb-src")&&!match($2,"cdrom"){split($2,A,"/");for(i=4;i<=NF;++i) print "wget -O /var/lib/apt/config_files/"A[3]"_"A[4]"_dists_"$3"_"$i"_binary-amd64_Packages.gz "$2"dists/"$3"/"$i"/binary-amd64/Packages.gz"}' < /etc/apt/sources.list > /var/lib/apt/config_files/config_apt
 			echo -e "WARNING : Your computer isn't correctly configured in order to use the apt tool."
 			echo -e "This program will configure it for you. You now have to execute the$VERT apt-off -c$NORMAL"
 			echo -e "command. The configuration will end automatically next time you will use apt-off."
@@ -117,11 +118,11 @@ elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
 	fi;
 
 	if [[ "$OVERWRITE" == "y" ]]; then
-		echo "cd /var/lib/apt/deb" > offline.packages
-		echo "cd /var/lib/apt/deb" > install.packages
+		echo "cd /var/lib/apt/deb" > /var/lib/apt/offline.packages
+		echo "cd /var/lib/apt/deb" > /var/lib/apt/install.packages
 	else
-		echo "cd /var/lib/apt/deb" >> offline.packages
-		echo "cd /var/lib/apt/deb" >> install.packages
+		echo "cd /var/lib/apt/deb" >> /var/lib/apt/offline.packages
+		echo "cd /var/lib/apt/deb" >> /var/lib/apt/install.packages
 	fi;
 
 	if [[ "$#" -lt 2 ]]; then
@@ -133,8 +134,8 @@ elif [[ "$1" == "-g" || "$1" == "--generate" ]]; then
 		done;
 
 		REPOSITORY=`awk '($1 == "deb") { print $2 }' /etc/apt/sources.list`
-		awk -v repo="${REPOSITORY}" '{print "wget -O " gensub( ".*/", "", $1 ) " "repo$1}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/offline.packages
-		awk '{print "dpkg -i -F depends " gensub( ".*/", "", $1 )}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/install.packages
+		awk -v repo="${REPOSITORY}" '{print "wget -O /var/lib/apt/deb/" gensub( ".*/", "", $1 ) " "repo$1}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/offline.packages
+		awk '{print "dpkg -i -F depends /var/lib/apt/deb/" gensub( ".*/", "", $1 )}' < /var/lib/apt/.offline_tmp >> /var/lib/apt/install.packages
 
 		rm -f /var/lib/apt/.offline_tmp
 	fi;
@@ -177,6 +178,15 @@ elif [[ "$1" == "-i" || "$1" == "--install" ]]; then
 	else
 		$SCRIPT_DIR/apt-off -g && $SCRIPT_DIR/apt-off -c && $SCRIPT_DIR/apt-off -g "${@:2}" && $SCRIPT_DIR/apt-off -d && $SCRIPT_DIR/apt-off -x
 	fi;
+
+
+##############################
+## Purge apt-off files      ##
+##############################
+elif [[ "$1" == "-p" || "$1" == "--purge" ]]; then
+	rm -rf /var/lib/apt/config_files && rm -f /var/lib/apt/deb/*.deb && rm -f /var/lib/apt/lists/* && rm -f /var/lib/apt/*.packages
+
+
 
 ##########################
 ## Display usage rules  ##
